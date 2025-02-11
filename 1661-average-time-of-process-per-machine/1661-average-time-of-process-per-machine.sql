@@ -2,28 +2,19 @@
 -- 소요시간 = 'end' timestamp - 'start' timestamp
 -- 평균시간 = 총 소요시간 / 프로세스 수
 
--- 기계별 소요시간
-WITH CTE1 AS (
+-- 기계별 프로세스별 소요시간
+WITH CTE AS (
     SELECT 
         machine_id,
         process_id,
-        MAX(timestamp)-MIN(timestamp) AS taken_timestamp
+        MAX(timestamp) - MIN(timestamp) AS taken_timestamp
     FROM Activity 
-    GROUP BY 1, 2 
-),
--- 기계별 프로세스 수
-CTE2 AS (
-SELECT 
-    machine_id,
-    COUNT(DISTINCT process_id) AS count_process_id
-FROM Activity 
-GROUP BY 1
+    GROUP BY machine_id, process_id
 )
 
+-- 평균 소요시간 계산
 SELECT
-    A.machine_id,
-    ROUND(SUM(A.taken_timestamp) / B.count_process_id, 3) AS processing_time 
-FROM CTE1 A
-JOIN CTE2 B
-  ON A.machine_id = B.machine_id
-GROUP BY 1
+    machine_id,
+    ROUND(SUM(taken_timestamp) / COUNT(process_id), 3) AS processing_time 
+FROM CTE
+GROUP BY machine_id
